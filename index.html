@@ -191,7 +191,7 @@
                 }
 
                 // set dictionary
-                jQuery.get('https://boggle-solver.netlify.app/dictionary.txt', function(data) {
+                jQuery.get('dictionary.txt', function(data) {
                     dictionary = new Set(data.split("\n"));
 
                     // loop through each cell for each word length
