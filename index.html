@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Boggle</title>
+        <style>
+            body {
+                text-align: center;
+                font-size: 16px;
+                background-color: #999999;
+            }
+            table, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+                margin: auto;
+            }
+
+            td {
+                width: 25px;
+                height: 25px;
+                font-size: 25px;
+                line-height: 25px;
+                padding: 5px;
+            }
+
+            table, button, #output {
+                margin-top: 20px;
+            }
+
+            #content {
+                background-color: white;
+                padding: 10px;
+                margin: auto;
+                margin-top: 10%;
+                border-radius: 10px;
+                width: 200px;
+            }
+        </style>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+        
+    </head>
+    <body>
+        <div id = "content">
+        
+        Eric Kugel 2021
+        
+        <div id = "input">
+            <table id = "table">
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                <tr>
+                    <td> </td>
+                    <td> </td>
+                    <td> </td>
+                    <td> </td>
+                </tr>
+                
+            </table>
+            <script>
+            
+
+            let rows = document.getElementsByTagName("tr");
+            const table = [];
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows.item(i).children;
+                table[i] = [];
+                for (var i1 = 0; i1 < row.length; i1++) {
+                    var tableCell = row.item(i1);
+                    tableCell.setAttribute("contentEditable", true)
+                    tableCell.setAttribute("tabindex", 0)
+                    tableCell.innerText = " "
+                    table[i][i1] = tableCell;
+                }
+            }
+            </script>
+        </div>
+
+        <button id = "run" onclick = "run()">Run</button><br/>
+
+        <div id = "output"></div>
+
+        <script>
+            const board = [];
+            const words = [];
+            var dictionary;
+            const output = document.getElementById("output");
+
+            class Cell {
+                constructor(coords) {
+                    this.coords = coords;
+                    this.letter = board[coords[1]][coords[0]];
+                    this.neighbors = [];
+                }
+
+                getNeighbors() {
+                    var neighbors = [];
+                    for (var xOffset = 0; xOffset < 3; xOffset++) {
+                        for (var yOffset = 0; yOffset < 3; yOffset++) {
+                            var x = this.coords[0] - 1 + xOffset;
+                            var y = this.coords[1] - 1 + yOffset;
+                            if (x >=0 && y >= 0 && x < 4 && y < 4) {
+                                var currentCell = new Cell([x,y])
+                                neighbors.push(currentCell)
+                            }
+                        }
+                    }
+                    return neighbors;
+                }
+
+                isSameAs(cell) {
+                    if (this.coords[0] == cell.coords[0] && this.coords[1] == cell.coords[1]) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+            }
+
+            function wordToString(word) {
+                var wordString = "";
+                for (var i = 0; i < word.length; i++) {
+                    var cell = word[i];
+                    wordString += cell.letter;
+                }
+                return wordString; 
+
+            }
+
+            function recurse(word, wordLength) {
+                if (word.length < wordLength) {
+                    var startingCell = word.at(-1);
+                    var neighbors = startingCell.getNeighbors();
+                    for (var i = 0; i < neighbors.length; i++) {
+                        var neighbor = neighbors[i];
+                        newWord = _.cloneDeep(word);
+                        var isDuplicate = false;
+                        for (var cellIndex = 0; cellIndex < word.length; cellIndex++) {
+                            var cell = word[cellIndex];
+                            if (cell.isSameAs(neighbor)) {
+                                isDuplicate = true;
+                                break;
+                            }
+                        }
+                        if (!isDuplicate) {
+                            newWord.push(neighbor);
+                            recurse(newWord, wordLength);
+                        }
+                    }
+                }
+
+                else if (word.length == wordLength) {
+                    wordString = wordToString(word);
+                    if (!words.includes(wordString)) {
+                        if (dictionary.has(wordString)) {
+                            words.push(wordString.trim());
+                            output.innerHTML += wordString + "\n";
+                            console.log(wordString);
+                        }
+                    }
+                }
+
+
+            }
+            
+            function run() {
+                // set letters
+                for (var i = 0; i < table.length; i++) {
+                    let row = table[i];
+                    board[i] = [];
+                    for (var i1 = 0; i1 < row.length; i1++) {
+                        let cell = row[i1];
+                        board[i][i1] = cell.innerText.trim().toLowerCase();
+                    }
+                }
+
+                // set dictionary
+                jQuery.get('https://boggle-solver.netlify.app/dictionary.txt', function(data) {
+                    dictionary = new Set(data.split("\n"));
+
+                    // loop through each cell for each word length
+                    for (var iter = 0; iter < 5; iter++) {
+                        var wordLength = iter + 3;
+                        for (var x = 0; x < board.length; x++) {
+                            for (var y = 0; y < board[0].length; y++) {
+                                var startingCell = new Cell([x,y]);
+                                var word = [startingCell];
+                                recurse(word, wordLength);
+                            }
+                        }
+                    }
+                });
+            }
+        </script>
+        </div>
+    </body>
+</html>
